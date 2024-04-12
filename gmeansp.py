@@ -16,10 +16,10 @@ def seed_globe(seed):
 
 
 def drain(plot_data):
-	title = ['best_cluster', 'gmeans', 'gmeansp', 'gmeanspp']
-	fig, axis = plt.subplots(nrows=1, ncols=4, figsize=(12, 3))
+	title = ['best_cluster', 'gmeans', 'gmeansAcc']
+	fig, axis = plt.subplots(nrows=1, ncols=3, figsize=(12, 3))
 
-	for i in range(4):
+	for i in range(3):
 		sbn.scatterplot(x='x', y='y', data=plot_data, hue=title[i], ax=axis[i], palette='tab20_r')
 		axis[i].set_title(title[i])
 		plt.subplots_adjust(wspace=0.3, hspace=0.3)
@@ -36,14 +36,12 @@ if __name__ == '__main__':
 		n_features=5,
 		centers=5)
 
-	gmeans = GMeans(random_state=1010,
+	gmeans = GMeans_MB(random_state=1010,
 					   strictness=4)
 
-	gmeansp = GMeans_p(random_state=1010,
+	gmeansAcc = GMeans_Acc(random_state=1010,
 					   strictness=4)
 
-	gmeanspp = GMeans_pp(random_state=1010,
-					   strictness=4)
 
 	start = time.time()
 	gmeans.fit(iris)
@@ -51,18 +49,12 @@ if __name__ == '__main__':
 
 	print("[G_means with minbatchkmeans] Time Elapsed:", end - start)
 
-
+	# G-means with Acc
 	start = time.time()
-	gmeanspp.fit(iris)
+	gmeansAcc.fit(iris)
 	end = time.time()
 
-	print("[G_means with kmeans] Time Elapsed:", end - start)
-
-	start = time.time()
-	gmeansp.fit(iris)
-	end = time.time()
-
-	print("[G_means+] Time Elapsed:", end - start)
+	print("[G_meansAcc] Time Elapsed:", end - start)
 
 	# 画图
 	plot_data = pd.DataFrame(iris[:, 0:2])
@@ -70,7 +62,6 @@ if __name__ == '__main__':
 
 	plot_data['best_cluster'] = labels
 	plot_data['gmeans'] = gmeans.labels_
-	plot_data['gmeansp'] = gmeansp.labels_
-	plot_data['gmeanspp'] = gmeanspp.labels_
+	plot_data['gmeansAcc'] = gmeansAcc.labels_
 
 	drain(plot_data)

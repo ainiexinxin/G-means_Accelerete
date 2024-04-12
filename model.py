@@ -222,7 +222,7 @@ class acc_means(object):
         self.labels_ = data_index[:, 1]
 
 
-class GMeans(object):
+class GMeans_MB(object):
     """strictness = how strict should the anderson-darling test for normality be
             0: not at all strict
             4: very strict
@@ -230,7 +230,7 @@ class GMeans(object):
 
     def __init__(self, min_obs=1, max_depth=10, random_state=None, strictness=4):
 
-        super(GMeans, self).__init__()
+        super(GMeans_MB, self).__init__()
 
         self.max_depth = max_depth
 
@@ -316,7 +316,7 @@ class GMeans(object):
             self.labels_[i] = arr[self.labels_[i]]
 
 
-class GMeans_p(object):
+class GMeans_Acc(object):
     """strictness = how strict should the anderson-darling test for normality be
             0: not at all strict
             4: very strict
@@ -324,7 +324,7 @@ class GMeans_p(object):
 
     def __init__(self, min_obs=1, max_depth=10, random_state=None, strictness=4):
 
-        super(GMeans_p, self).__init__()
+        super(GMeans_Acc, self).__init__()
 
         self.max_depth = max_depth
 
@@ -408,99 +408,3 @@ class GMeans_p(object):
         arr = dict(zip(diuniq, range(0, len(diuniq))))
         for i in range(0, len(self.labels_)):
             self.labels_[i] = arr[self.labels_[i]]
-
-
-class GMeans_pp(object):
-    """strictness = how strict should the anderson-darling test for normality be
-            0: not at all strict
-            4: very strict
-    """
-
-    def __init__(self, min_obs=1, max_depth=10, random_state=None, strictness=4):
-
-        super(GMeans_pp, self).__init__()
-
-        self.max_depth = max_depth
-
-        self.min_obs = min_obs
-
-        self.random_state = random_state
-
-        if strictness not in range(5):
-            raise ValueError("strictness parameter must be integer from 0 to 4")
-        self.strictness = strictness
-
-        self.stopping_criteria = []
-
-    def _gaussianCheck(self, vector):
-        """
-        check whether a given input vector follows a gaussian distribution
-        H0: vector is distributed gaussian
-        H1: vector is not distributed gaussian
-        """
-        output = anderson(vector)
-
-        if output[0] <= output[1][self.strictness]:
-            return True
-        else:
-            return False
-
-    def _recursiveClustering(self, data, depth, index):
-        """
-        recursively run kmeans with k=2 on your data until a max_depth is reached or we have
-            gaussian clusters
-        """
-        depth += 1
-        if depth == self.max_depth:
-            self.data_index[index[:, 0]] = index
-            self.stopping_criteria.append('max_depth')
-            return
-
-        km = KMeans(n_clusters=2, random_state=self.random_state)
-        km.fit(data)
-
-        centers = km.cluster_centers_
-        v = centers[0] - centers[1]
-        x_prime = scale(data.dot(v) / (v.dot(v)))
-        gaussian = self._gaussianCheck(x_prime)
-
-        # print gaussian
-
-        if gaussian == True:
-            self.data_index[index[:, 0]] = index
-            self.stopping_criteria.append('gaussian')
-            return
-
-        labels = set(km.labels_)
-        for k in labels:
-            current_data = data[km.labels_ == k]
-
-            if current_data.shape[0] <= self.min_obs:
-                self.data_index[index[:, 0]] = index
-                self.stopping_criteria.append('min_obs')
-                return
-
-            current_index = index[km.labels_ == k]
-            current_index[:, 1] = np.random.randint(0, 100000000)
-            self._recursiveClustering(data=current_data, depth=depth, index=current_index)
-
-    # set_trace()
-
-    def fit(self, data):
-        """
-        fit the recursive clustering model to the data
-        """
-        self.data = data
-
-        data_index = np.array([(i, False) for i in range(data.shape[0])])
-        self.data_index = data_index
-
-        self._recursiveClustering(data=data, depth=0, index=data_index)
-
-        self.labels_ = self.data_index[:, 1]
-        diuniq = np.unique(self.data_index[:, 1])
-        arr = dict(zip(diuniq, range(0, len(diuniq))))
-        for i in range(0, len(self.labels_)):
-            self.labels_[i] = arr[self.labels_[i]]
-
-
